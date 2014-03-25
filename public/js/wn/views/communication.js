@@ -148,7 +148,7 @@ wn.views.CommunicationComposer = Class.extend({
 				{label:wn._("Send As Email"), fieldtype:"Check",
 					fieldname:"send_email"},
 				{label:wn._("Communication Medium"), fieldtype:"Select", 
-					options: ["Phone", "Chat", "Email", "SMS", "Other"],
+					options: ["Phone", "Chat", "Email", "SMS", "Visit", "Other"],
 					fieldname:"communication_medium"},
 				{label:wn._("Sent or Received"), fieldtype:"Select", 
 					options: ["Received", "Sent"],
