@@ -141,15 +141,15 @@ def get_backup():
 	to you shortly on the following email address:
 	%s""" % (', '.join(recipient_list)))
 	
-def scheduled_backup(older_than=6, ignore_files=False, backup_path_db=None, backup_path_files=None):
+def scheduled_backup(older_than=6, delete_older_than=168, ignore_files=False, backup_path_db=None, backup_path_files=None):
 	"""this function is called from scheduler
 		deletes backups older than 7 days
 		takes backup"""
-	odb = new_backup(older_than, ignore_files, backup_path_db=backup_path_db, backup_path_files=backup_path_files)
+	odb = new_backup(older_than, delete_older_than=delete_older_than, ignore_files=ignore_files, backup_path_db=backup_path_db, backup_path_files=backup_path_files)
 	return odb
 
-def new_backup(older_than=6, ignore_files=False, backup_path_db=None, backup_path_files=None):
-	delete_temp_backups(older_than=168)
+def new_backup(older_than=6, delete_older_than=168, ignore_files=False, backup_path_db=None, backup_path_files=None):
+	delete_temp_backups(older_than=delete_older_than)
 	odb = BackupGenerator(webnotes.conn.cur_db_name, webnotes.conn.cur_db_name,\
 						  webnotes.get_db_password(webnotes.conn.cur_db_name), 
 						  backup_path_db=backup_path_db, backup_path_files=backup_path_files, db_host = webnotes.conn.host)

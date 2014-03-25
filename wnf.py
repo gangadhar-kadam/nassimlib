@@ -121,6 +121,7 @@ def setup_utilities(parser):
 	# misc
 	parser.add_argument("--backup", default=False, action="store_true",
 		help="Take backup of database in backup folder [--with_files]")
+	parser.add_argument("--delete_older_than", default=6, type=int, help="delete backup older than")
 	parser.add_argument("--move", default=False, action="store_true",
 		help="Move site to different directory defined by --dest_dir")
 	parser.add_argument("--dest_dir", nargs=1, metavar="DEST-DIR",
@@ -353,10 +354,10 @@ def watch():
 	webnotes.build.watch(True)
 
 @cmd
-def backup(site=None, with_files=False, verbose=True, backup_path_db=None, backup_path_files=None):
+def backup(site=None, with_files=False, verbose=True, backup_path_db=None, backup_path_files=None, delete_older_than=6):
 	from webnotes.utils.backups import scheduled_backup
 	webnotes.connect(site=site)
-	odb = scheduled_backup(ignore_files=not with_files, backup_path_db=backup_path_db, backup_path_files=backup_path_files)
+	odb = scheduled_backup(delete_older_than=delete_older_than, ignore_files=not with_files, backup_path_db=backup_path_db, backup_path_files=backup_path_files)
 	if verbose:
 		from webnotes.utils import now
 		print "database backup taken -", odb.backup_path_db, "- on", now()
