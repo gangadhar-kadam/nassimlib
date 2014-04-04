@@ -64,11 +64,11 @@ def application(request):
 	except webnotes.SessionStopped, e:
 		webnotes.local._response = handle_session_stopped()
 		
+	else:
+		return webnotes.local._response
+		
 	finally:
-		if webnotes.conn:
-			webnotes.conn.close()
-	
-	return webnotes.local._response
+		webnotes.destroy()
 
 application = local_manager.make_middleware(application)
 
