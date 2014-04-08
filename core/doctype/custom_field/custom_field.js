@@ -1,5 +1,5 @@
 // Copyright (c) 2013, Web Notes Technologies Pvt. Ltd. and Contributors
-// MIT License. See license.txt 
+// MIT License. See license.txt
 
 //168
 // Refresh
@@ -57,16 +57,16 @@ cur_frm.cscript.dt = function(doc, dt, dn) {
 		set_field_options('insert_after', '');
 		return;
 	}
+	var insert_after = doc.insert_after;
 	return wn.call({
 		method: 'core.doctype.custom_field.custom_field.get_fields_label',
 		args: { doctype: doc.dt, fieldname: doc.fieldname },
 		callback: function(r, rt) {
-			doc = locals[doc.doctype][doc.name];
-			var insert_after_val = null;
-			if(doc.insert_after) {
-				insert_after_val = doc.insert_after;
-			}
-			set_field_options('insert_after', r.message, insert_after_val);
+			set_field_options('insert_after', r.message);
+
+			insert_after_val = insert_after ? insert_after : null ;
+			if(in_list(r.message.split("\n"), insert_after_val))
+				cur_frm.set_value('insert_after', insert_after_val)
 		}
 	});
 }
