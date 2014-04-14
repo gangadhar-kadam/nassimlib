@@ -22,50 +22,50 @@ def get_form_params():
 		data["fields"] = json.loads(data["fields"])
 	if isinstance(data.get("docstatus"), basestring):
 		data["docstatus"] = json.loads(data["docstatus"])
-		
+
 	return data
-	
-def execute(doctype, query=None, filters=None, fields=None, docstatus=None, 
-		group_by=None, order_by=None, limit_start=0, limit_page_length=None, 
+
+def execute(doctype, query=None, filters=None, fields=None, docstatus=None,
+		group_by=None, order_by=None, limit_start=0, limit_page_length=None,
 		as_list=False, with_childnames=False, debug=False):
 
 	if query:
 		return run_custom_query(query)
-				
+
 	if not filters: filters = []
 	if not docstatus: docstatus = []
 
 	args = prepare_args(doctype, filters, fields, docstatus, group_by, order_by, with_childnames)
 	args.limit = add_limit(limit_start, limit_page_length)
-	
+
 	query = """select %(fields)s from %(tables)s where %(conditions)s
 		%(group_by)s order by %(order_by)s %(limit)s""" % args
-		
+
 	return webnotes.conn.sql(query, as_dict=not as_list, debug=debug)
-	
+
 def prepare_args(doctype, filters, fields, docstatus, group_by, order_by, with_childnames):
 	webnotes.local.reportview_tables = get_tables(doctype, fields)
 	load_doctypes()
 	remove_user_tags(doctype, fields)
 	conditions = build_conditions(doctype, fields, filters, docstatus)
-	
+
 	args = webnotes._dict()
-	
+
 	if with_childnames:
 		for t in webnotes.local.reportview_tables:
 			if t != "`tab" + doctype + "`":
 				fields.append(t + ".name as '%s:name'" % t[4:-1])
-	
+
 	# query dict
 	args.tables = ', '.join(webnotes.local.reportview_tables)
 	args.conditions = ' and '.join(conditions)
 	args.fields = ', '.join(fields)
-	
+
 	args.order_by = order_by or webnotes.local.reportview_tables[0] + '.modified desc'
 	args.group_by = group_by and (" group by " + group_by) or ""
 
 	check_sort_by_table(args.order_by)
-		
+
 	return args
 
 def compress(data):
@@ -78,12 +78,12 @@ def compress(data):
 		for key in keys:
 			new_row.append(row[key])
 		values.append(new_row)
-		
+
 	return {
 		"keys": keys,
 		"values": values
 	}
-	
+
 def check_sort_by_table(sort_by):
 	"""check atleast 1 column selected from the sort by table """
 	if "." in sort_by:
@@ -105,7 +105,7 @@ def load_doctypes():
 	import webnotes.model.doctype
 
 	webnotes.local.reportview_roles = webnotes.get_roles()
-	
+
 	if not getattr(webnotes.local, "reportview_doctypes", None):
 		webnotes.local.reportview_doctypes = {}
 
@@ -115,7 +115,7 @@ def load_doctypes():
 			if not webnotes.has_permission(doctype):
 				raise webnotes.PermissionError, doctype
 			webnotes.local.reportview_doctypes[doctype] = webnotes.model.doctype.get(doctype)
-	
+
 def remove_user_tags(doctype, fields):
 	"""remove column _user_tags if not in table"""
 	columns = get_table_columns(doctype)
@@ -135,18 +135,18 @@ def add_limit(limit_start, limit_page_length):
 		return 'limit %s, %s' % (limit_start, limit_page_length)
 	else:
 		return ''
-		
+
 def build_conditions(doctype, fields, filters, docstatus):
-	"""build conditions"""	
+	"""build conditions"""
 	if docstatus:
 		conditions = [webnotes.local.reportview_tables[0] + '.docstatus in (' + ','.join(docstatus) + ')']
 	else:
 		# default condition
 		conditions = [webnotes.local.reportview_tables[0] + '.docstatus < 2']
-	
+
 	# make conditions from filters
 	build_filter_conditions(filters, conditions)
-	
+
 	# join parent, child tables
 	for tname in webnotes.local.reportview_tables[1:]:
 		conditions.append(tname + '.parent = ' + webnotes.local.reportview_tables[0] + '.name')
@@ -155,39 +155,39 @@ def build_conditions(doctype, fields, filters, docstatus):
 	match_conditions = build_match_conditions(doctype, fields)
 	if match_conditions:
 		conditions.append(match_conditions)
-	
+
 	return conditions
-		
+
 def build_filter_conditions(filters, conditions):
 	"""build conditions from user filters"""
 	from webnotes.utils import cstr, flt
 	if not getattr(webnotes.local, "reportview_tables", None):
 		webnotes.local.reportview_tables = []
-		
+
 	doclist = {}
 	for f in filters:
 		if isinstance(f, basestring):
 			conditions.append(f)
 		else:
-			
+
 			tname = ('`tab' + f[0] + '`')
 			if not tname in webnotes.local.reportview_tables:
 				webnotes.local.reportview_tables.append(tname)
-				
+
 			if not hasattr(webnotes.local, "reportview_doctypes") \
 				or not webnotes.local.reportview_doctypes.has_key(tname):
 					load_doctypes()
-		
+
 			# prepare in condition
 			if f[2] in ['in', 'not in']:
 				opts = ["'" + t.strip().replace("'", "\\'") + "'" for t in f[3].split(',')]
 				f[3] = "(" + ', '.join(opts) + ")"
 				conditions.append('ifnull(' + tname + '.' + f[1] + ", '') " + f[2] + " " + f[3])
 			else:
-				df = webnotes.local.reportview_doctypes[f[0]].get({"doctype": "DocField", 
+				df = webnotes.local.reportview_doctypes[f[0]].get({"doctype": "DocField",
 					"fieldname": f[1]})
-					
-				if f[2] == "like" or (isinstance(f[3], basestring) and 
+
+				if f[2] == "like" or (isinstance(f[3], basestring) and
 					(not df or df[0].fieldtype not in ["Float", "Int", "Currency", "Percent"])):
 						value, default_val = ("'" + f[3].replace("'", "\\'") + "'"), '""'
 				else:
@@ -196,10 +196,10 @@ def build_filter_conditions(filters, conditions):
 				conditions.append('ifnull({tname}.{fname}, {default_val}) {operator} {value}'.format(
 					tname=tname, fname=f[1], default_val=default_val, operator=f[2],
 					value=value))
-					
+
 def build_match_conditions(doctype, fields=None, as_condition=True):
 	"""add match conditions if applicable"""
-	
+
 	match_filters = {}
 	match_conditions = []
 	match = True
@@ -230,25 +230,25 @@ def build_match_conditions(doctype, fields=None, as_condition=True):
 								match_filters.setdefault(document_key, [])
 								if v not in match_filters[document_key]:
 									match_filters[document_key].append(v)
-							
+
 				elif d.read == 1 and d.permlevel == 0:
-					# don't restrict if another read permission at level 0 
+					# don't restrict if another read permission at level 0
 					# exists without a match restriction
 					match = False
 					match_filters = {}
-	
+
 	if as_condition:
 		conditions = ""
 		if match_conditions and match:
 			conditions =  '('+ ' or '.join(match_conditions) +')'
-		
+
 		doctype_conditions = get_doctype_conditions(doctype)
 		if doctype_conditions:
 				conditions += ' and ' + doctype_conditions if conditions else doctype_conditions
 		return conditions
 	else:
-		return match_filters
-		
+		return match_filters if match else {}
+
 def get_doctype_conditions(doctype):
 	from webnotes.model.code import load_doctype_module
 	module = load_doctype_module(doctype)
@@ -263,7 +263,7 @@ def get_tables(doctype, fields):
 	if fields:
 		for f in fields:
 			if "." not in f: continue
-		
+
 			table_name = f.split('.')[0]
 			if table_name.lower().startswith('group_concat('):
 				table_name = table_name[13:]
@@ -272,7 +272,7 @@ def get_tables(doctype, fields):
 			if not table_name[0]=='`':
 				table_name = '`' + table_name + '`'
 			if not table_name in tables:
-				tables.append(table_name)	
+				tables.append(table_name)
 
 	return tables
 
@@ -280,7 +280,7 @@ def get_tables(doctype, fields):
 def save_report():
 	"""save report"""
 	from webnotes.model.doc import Document
-	
+
 	data = webnotes.local.form_dict
 	if webnotes.conn.exists('Report', data['name']):
 		d = Document('Report', data['name'])
@@ -288,7 +288,7 @@ def save_report():
 		d = Document('Report')
 		d.report_name = data['name']
 		d.ref_doctype = data['doctype']
-	
+
 	d.report_type = "Report Builder"
 	d.json = data['json']
 	webnotes.bean([d]).save()
@@ -298,10 +298,10 @@ def save_report():
 @webnotes.whitelist()
 def export_query():
 	"""export from report builder"""
-	
+
 	# TODO: validate use is allowed to export
 	verify_export_allowed()
-	
+
 	ret = execute(**get_form_params())
 
 	columns = [x[0] for x in webnotes.conn.get_description()]
@@ -346,7 +346,7 @@ def get_labels(columns):
 		for d in webnotes.local.reportview_doctypes[doctype]:
 			if d.doctype=='DocField' and d.fieldname:
 				label_dict[d.fieldname] = d.label
-	
+
 	return map(lambda x: label_dict.get(x, x.title()), columns)
 
 @webnotes.whitelist()
@@ -358,7 +358,7 @@ def delete_items():
 
 	il = json.loads(webnotes.form_dict.get('items'))
 	doctype = webnotes.form_dict.get('doctype')
-	
+
 	for d in il:
 		try:
 			dt_obj = get_obj(doctype, d)
@@ -368,25 +368,25 @@ def delete_items():
 		except Exception, e:
 			webnotes.errprint(webnotes.getTraceback())
 			pass
-		
+
 @webnotes.whitelist()
 def get_stats(stats, doctype):
 	"""get tag info"""
 	import json
 	tags = json.loads(stats)
 	stats = {}
-	
+
 	columns = get_table_columns(doctype)
 	for tag in tags:
 		if not tag in columns: continue
-		tagcount = execute(doctype, fields=[tag, "count(*)"], 
+		tagcount = execute(doctype, fields=[tag, "count(*)"],
 			filters=["ifnull(%s,'')!=''" % tag], group_by=tag, as_list=True)
-			
+
 		if tag=='_user_tags':
 			stats[tag] = scrub_user_tags(tagcount)
 		else:
 			stats[tag] = tagcount
-			
+
 	return stats
 
 def scrub_user_tags(tagcount):
@@ -399,13 +399,13 @@ def scrub_user_tags(tagcount):
 			if tag:
 				if not tag in rdict:
 					rdict[tag] = 0
-			
+
 				rdict[tag] += tagdict[t]
-	
+
 	rlist = []
 	for tag in rdict:
 		rlist.append([tag, rdict[tag]])
-	
+
 	return rlist
 
 def get_table_columns(table):
