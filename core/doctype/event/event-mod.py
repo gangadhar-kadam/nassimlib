@@ -3,14 +3,12 @@
 
 from __future__ import unicode_literals
 import webnotes
+import gflags
 import httplib2
-import json
-# import httplib2
-from gdata.gauth import OAuth2Token
-import urllib
-import urlparse
-
+from webnotes import msgprint, _
+sql = webnotes.conn.sql
 from webnotes.model.bean import getlist
+import gdata
 from apiclient.discovery import build
 from oauth2client.file import Storage
 from oauth2client.tools import run
@@ -19,11 +17,21 @@ from oauth2client.client import Credentials
 from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
-import atom.http_core
+import logging
+import os
+import signal
+import time
+import sys
+import re
+import string
+import requests
+import subprocess
+import json
+from webnotes.model.doc import Document
+# import simplejson as json
+#import time
 
 from webnotes.utils import getdate, cint, add_months, date_diff, add_days, nowdate
-from webnotes.model.doc import Document
-
 
 weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
@@ -34,14 +42,13 @@ class DocType:
 	def validate(self):
 		if self.doc.starts_on and self.doc.ends_on and self.doc.starts_on > self.doc.ends_on:
 			webnotes.msgprint(webnotes._("Event End must be after Start"), raise_exception=True)
-
+	
 	def on_update(self):
 		# webnotes.errprint("In on Update")
 		name=webnotes.session.user
-		credentials_json= webnotes.conn.sql(""" select credentials from tabProfile 
+		credentials_json= webnotes.conn.sql(""" select credentails from tabProfile 
 			where name ='%s'"""%(webnotes.session.user), as_list=1)
-		webnotes.errprint("credentials_json")
-		webnotes.errprint(credentials_json)
+		
 		if len(credentials_json) == 0:
 			webnotes.msgprint("Create Credentials for current user")
 		if self.doc.event_id:
@@ -50,10 +57,8 @@ class DocType:
 			dic=self.create_dict()
 			event=self.create_event(dic)
 			service=create_service(credentials_json[0][0])
-			# if service:
 			recurring_event= self.create_recurringevent(event,service)
-			if recurring_event:
-				self.doc.event_id=recurring_event['id']
+			self.doc.event_id=recurring_event['id']
 			self.doc.save()
 
 	def create_dict(self):
@@ -67,8 +72,20 @@ class DocType:
 		dic = {'summary': self.doc.subject,'location': 'pune','start': self.doc.starts_on,'end': self.doc.ends_on,'attendees': list1 }
 		return dic
 
+	# def create_service(self, credentials_json):
+	# 	webnotes.errprint("in create service")
+	# 	credentials = oauth2client.client.Credentials.new_from_json(credentials_json)
+	# 	#json_object = json.load(response)
+	# 	#json_object = json.loads(response.read())
+	# 	#webnotes.errprint(json_object)
+	# 	http = ''
+	# 	http = httplib2.Http()
+	# 	http = credentials.authorize(http)
+	# 	service = build(serviceName='calendar', version='v3', http=http, 
+	# 		developerKey='%s'%webnotes.conn.get_value('Profile', webnotes.session.user,'app_key'))	
+	# 	return service
+
 	def create_recurringevent(self,event,service):
-		recurring_event=''
 		# webnotes.errprint(type(service))
 		# webnotes.errprint("in recurring event")
 		if service:
@@ -110,9 +127,7 @@ class DocType:
 		webnotes.errprint(event)
 		updated_event = service.events().update(calendarId='primary', eventId=self.doc.event_id, body=event).execute()
 
-		#return updated_event	
-
-			
+		#return updated_event		
 def get_match_conditions():
 	return """(tabEvent.event_type='Public' or tabEvent.owner='%(user)s'
 		or exists(select * from `tabEvent User` where 
@@ -178,7 +193,7 @@ def get_events(start, end, user=None, for_reminder=False):
 			"reminder_condition": "and ifnull(send_reminder,0)=1" if for_reminder else "",
 			"user": user,
 			"roles": "', '".join(roles)
-		}, as_dict=1)
+		}, as_dict=1,debug=1)
 			
 	# process recurring events
 	start = start.split(" ")[0]
@@ -263,19 +278,10 @@ def get_events(start, end, user=None, for_reminder=False):
 			
 	return events
 
-
 def create_service(credentials_json):
-	webnotes.errprint("in the create_service")
-	app_key=webnotes.conn.sql("select value from `tabSingles` where doctype='OAuth Settings' and field in ('app_key');",as_list=1)
-	# print token_details
-	webnotes.errprint(app_key[0][0])
-	if app_key:
-		developerKey=app_key[0][0]
-
-
 	if credentials_json:
 		credentials = oauth2client.client.Credentials.new_from_json(credentials_json)
-		# developerKey = webnotes.conn.sql("select app_key from tabProfile where name = '%s'"%(webnotes.session.user), as_list=1)
+		developerKey = webnotes.conn.sql("select app_key from tabProfile where name = '%s'"%(webnotes.session.user), as_list=1)
 		if developerKey:
 			#json_object = json.load(response)
 			#json_object = json.loads(response.read())
@@ -285,159 +291,57 @@ def create_service(credentials_json):
 			http = credentials.authorize(http)
 			service = build(serviceName='calendar', version='v3', http=http, 
 				developerKey=developerKey[0][0])	
-			return service	
+			return service
 
+# def generate_credentials(qry):
+# 	# qry[0]['response'] = 'ya29.LQCg-6iOHtih_SAAAADopTvYvQnGlKCyIIX6mOXSofIbdGjIrJES2T1_I2Xt8Q'
+# 	return """{"_module": "oauth2client.client", "token_expiry": "2014-06-09T12:04:15Z", 
+# 	"access_token": "%(response)s", 
+# 	"token_uri": "https://accounts.google.com/o/oauth2/token", "invalid": false, 
+# 	"token_response": 
+# 	{"access_token": "%(response)s", 
+# 	"token_type": "Bearer", "expires_in": 3600, "refresh_token": "%(refresh_token)s"}, 
+# 	"client_id": "%(client_id)s", 
+# 	"id_token": null, "client_secret": "%(client_secret)s", 
+# 	"revoke_uri": "https://accounts.google.com/o/oauth2/revoke", 
+# 	"_class": "OAuth2Credentials", 
+# 	"refresh_token": "%(refresh_token)s", 
+# 	"user_agent": "GCAL1"}
+# 	"""%(qry[0])
+
+	# return """{"_module": "oauth2client.client", "token_expiry": "2014-06-09T08:45:20Z", "access_token": "ya29.LQDmms0lRpDt0x4AAACroxLrnDsj9Hl-McDUKMWZ1lwT7rBaNAIKRWvQbt87lw", "token_uri": "https://accounts.google.com/o/oauth2/token", "invalid": false, "token_response": {"access_token": "ya29.LQDmms0lRpDt0x4AAACroxLrnDsj9Hl-McDUKMWZ1lwT7rBaNAIKRWvQbt87lw", "token_type": "Bearer", "expires_in": 3600, "refresh_token": "1/Zf07upTlDggaR1fbJu9H7TydkAv-3TL_RCuKyoTY13U"}, "client_id": "1001701160537.apps.googleusercontent.com", "id_token": null, "client_secret": "HQGQ9KlSg-4_vyjEuodVUuOw", "revoke_uri": "https://accounts.google.com/o/oauth2/revoke", "_class": "OAuth2Credentials", "refresh_token": "1/Zf07upTlDggaR1fbJu9H7TydkAv-3TL_RCuKyoTY13U", "user_agent": "GCAL1"}"""
 
 
 @webnotes.whitelist()
 def sync_google_event(_type='Post'):
-	webnotes.errprint("in the sync_google_event")
-	page_token = None
-	credentials_json= webnotes.conn.sql(""" select credentials  from tabProfile 
-            where name ='%s'"""%(webnotes.session.user), as_list=1)
-	service = create_service(credentials_json[0][0])
-	webnotes.errprint("service")
-	webnotes.errprint(service)
-	# ser=json.loads(service)
-	# webnotes.errprint(ser)
-
-	while True:
-		events = service.events().list(calendarId='primary', pageToken=page_token).execute()
-		webnotes.errprint("events")
-		webnotes.errprint(events)
-		for event in events['items']:
-			eventlist=webnotes.conn.sql("select event_id from `tabEvent`", as_list=1)
-	        s= webnotes.conn.sql("select modified from `tabEvent` where event_id= %s ",(event['id']) , as_list=1)
-	        a=[]
-	        a.append(event['id'])
-	        m=[]
-	        m.append(event['updated'])
-	        if a not in eventlist:
-	                webnotes.errprint("created event")
-	                d = Document("Event")
-	                d.event_id=event['id']
-	                d.subject=event['summary']
-	                d.starts_on=event['start']['dateTime']
-	                d.ends_on=event['end']['dateTime']
-	                d.save()
-	                webnotes.errprint(d.name)
-	        elif m > s:
-	                r=webnotes.conn.sql("update `tabEvent` set starts_on=%s, ends_on=%s,subject=%s where event_id=%s",(event['start']['dateTime'],event['end']['dateTime'],event['summary'],event['id']))
-	                webnotes.errprint(event['id'])
-	        else:
-	        	pass
-		page_token = events.get('nextPageToken')
-		if not page_token:
+        page_token = None
+        credentials_json= webnotes.conn.sql(""" select credentails from tabProfile 
+                where name ='%s'"""%(webnotes.session.user), as_list=1)
+        service = create_service(credentials_json[0][0])
+        while True:
+                events = service.events().list(calendarId='primary', pageToken=page_token).execute()
+                for event in events['items']:
+                        eventlist=webnotes.conn.sql("select event_id from `tabEvent`", as_list=1)
+                        s= webnotes.conn.sql("select modified from `tabEvent` where event_id= %s ",(event['id']) , as_list=1)
+                        a=[]
+                        a.append(event['id'])
+                        m=[]
+                        m.append(event['updated'])
+                        if a not in eventlist:
+                                webnotes.errprint("created vent")
+                                d = Document("Event")
+                                d.event_id=event['id']
+                                d.subject=event['summary']
+                                d.starts_on=event['start']['dateTime']
+                                d.ends_on=event['end']['dateTime']
+                                d.save()
+                                webnotes.errprint(d.name)
+                        elif m > s:
+                                r=webnotes.conn.sql("update `tabEvent` set starts_on=%s, ends_on=%s,subject=%s where event_id=%s",(event['start']['dateTime'],event['end']['dateTime'],event['summary'],event['id']))
+                                webnotes.errprint(event['id'])
+                        else:
+                                pass
+                page_token = events.get('nextPageToken')
+                if not page_tok:
 			break
-
-def refresh_token():
-	print "in the refresh_token"
-	print webnotes.session.user
-	# webnotes.errprint("in the refresh_token")
-	credentials_json= webnotes.conn.sql(""" select credentials from tabProfile 
-	where name ='%s'"""%('pranali.k@indictranstech.com'), as_list=1)
-	# print credentials_json
-	# @decorator.oauth_required
-	auth_token1 = OAuth2TokenFromCredentials(credentials_json[0][0])
-	print auth_token1.access_token
-	# auth_token=json.dumps(serialize(auth_token1))
-	# print type(auth_token)
-
-
-	# print auth_token["access_token"]
-
-	# UpdateFromCredentials()
-
-	# webnotes.errprint(json.loads(auth_token))
-
-
-
-class OAuth2TokenFromCredentials(OAuth2Token):
-	def __init__(self, credentials):
-		print "in the classs"
-		# print type(credentials)
-		http = httplib2.Http()
-		self.credentials =json.loads(credentials)
-		print self.credentials
-		super(OAuth2TokenFromCredentials, self).__init__(None, None, None, None)
-		self.UpdateFromCredentials()
-
-		# self._refresh(httplib2.Http().request)
-
-
-	def UpdateFromCredentials(self):
-		print "in the update"
-		print self.credentials["client_id"]
-		self.client_id =  self.credentials["client_id"]
-		print self.client_id
-		self.client_secret =  self.credentials["client_secret"]
-		self.user_agent =  self.credentials["user_agent"]
-		self.token_uri = self.credentials["token_uri"]
-		self.access_token = self.credentials["access_token"]
-		self.refresh_token = self.credentials["refresh_token"]
-		self.token_expiry = self.credentials["token_expiry"]
-		self._invalid = self.credentials["invalid"]
-		print self.user_agent 
-		print 'finish'
-		self._refresh(httplib2.Http().request)
-
-
-
-	# def generate_authorize_url(self, *args, **kwargs): raise NotImplementedError
-	# def get_access_token(self, *args, **kwargs): raise NotImplementedError
-	# def revoke(self, *args, **kwargs): raise NotImplementedError
-	# def _extract_tokens(self, *args, **kwargs): raise NotImplementedError
-
-	def _refresh(self,unused_request):
-		print "in the _refresh"
-		# pyresponse = json.load(fetchsamples()) 
-		# print "hi"
-		self._refresh(httplib2.Http().request)
-		print "self.credentials"
-		self.UpdateFromCredentials()
-
-
-	# def _refresh(self, request):
-	# 	# headers={}
-	# 	print "in the refresh"
-	# 	# token_uri=self.credentials["token_uri"]
-	# 	print self.token_uri
-	# 	print self.user_agent
-	# 	body = urllib.urlencode({
- #       'grant_type': 'refresh_token',
- #       'client_id': self.client_id,
- #       'client_secret': self.client_secret,
- #       'refresh_token' : self.refresh_token  
- #            })
-	# 	print 'body'
-
-	# 	print body
-
-	# 	# headers={
-	# 	# 'user-agent': self.user_agent,
- #  #       }
-  
- #        # print headers['user-agent']
- #        http_request = atom.http_core.HttpRequest(uri='https://accounts.google.com/o/oauth2/token', method='POST', headers='Gcal')
- #     	http_request.add_body_part(body, mime_type='application/x-www-form-urlencoded')
- #  #    	response = request(http_request)
- #  #    	body = response.read()
- #  #    	if response.status == 200:
-  #    		self._extract_tokens(body)
-  #    	else:
-  #    		self._invalid = True
-  #    	print response
-     	# return response
-
-	# def _extract_tokens(self, body):
-	# 	print "in the ext"
-	# 	d = simplejson.loads(body)
-	# 	self.access_token = d['access_token']
-	# 	self.refresh_token = d.get('refresh_token', self.refresh_token)
-	# 	if 'expires_in' in d:
-	# 		self.token_expiry = datetime.timedelta(
-	# 			seconds = int(d['expires_in'])) + datetime.datetime.now()
-	# 	else:
-	# 		self.token_expiry = None
-
 

@@ -1,0 +1,136 @@
+[
+ {
+  "creation": "2014-07-01 16:05:05", 
+  "docstatus": 0, 
+  "modified": "2014-07-09 19:42:05", 
+  "modified_by": "Administrator", 
+  "owner": "Administrator"
+ }, 
+ {
+  "autoname": "OA.######", 
+  "doctype": "DocType", 
+  "issingle": 1, 
+  "module": "Core", 
+  "name": "__common__"
+ }, 
+ {
+  "doctype": "DocField", 
+  "name": "__common__", 
+  "parent": "OAuth Settings", 
+  "parentfield": "fields", 
+  "parenttype": "DocType", 
+  "permlevel": 0
+ }, 
+ {
+  "cancel": 1, 
+  "create": 1, 
+  "doctype": "DocPerm", 
+  "name": "__common__", 
+  "parent": "OAuth Settings", 
+  "parentfield": "permissions", 
+  "parenttype": "DocType", 
+  "permlevel": 0, 
+  "read": 1, 
+  "role": "All", 
+  "submit": 0, 
+  "write": 1
+ }, 
+ {
+  "doctype": "DocType", 
+  "name": "OAuth Settings"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "user_creadentials", 
+  "fieldtype": "Section Break", 
+  "label": "User Creadentials"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "client_id", 
+  "fieldtype": "Data", 
+  "label": "Client Id"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "client_secret", 
+  "fieldtype": "Data", 
+  "label": "Client Secret "
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "app_key", 
+  "fieldtype": "Data", 
+  "label": "App key"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "app_name", 
+  "fieldtype": "Data", 
+  "label": "App Name"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "generate_access_token", 
+  "fieldtype": "Section Break", 
+  "label": "Generate Access Token"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "user", 
+  "fieldtype": "Link", 
+  "label": "User", 
+  "options": "Profile"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "get_verification_code_for_calender", 
+  "fieldtype": "Button", 
+  "label": "Get Verification Code For Calender"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "verification_code_for_calender", 
+  "fieldtype": "Data", 
+  "label": "Verification code for Calender"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "generate_token_calender", 
+  "fieldtype": "Button", 
+  "label": "Generate Token Calender"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "generate_acces_token_for_contact", 
+  "fieldtype": "Section Break", 
+  "label": "Generate acces token for Contact"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "allow_google_contact_access", 
+  "fieldtype": "Button", 
+  "label": "Get Verification Code For Calender"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "verification_code", 
+  "fieldtype": "Data", 
+  "label": "Verification code"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "generate_auth_tocken", 
+  "fieldtype": "Button", 
+  "label": "Generate Token Calender"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "read_contact", 
+  "fieldtype": "Button", 
+  "label": "Read Contact"
+ }, 
+ {
+  "doctype": "DocPerm"
+ }
+]

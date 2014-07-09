@@ -12,3 +12,13 @@ cur_frm.cscript.repeat_on = function(doc, cdt, cdn) {
 cur_frm.cscript.refresh = function(doc, cdt, cdn) {
 
 }
+
+
+cur_frm.cscript.test = function(doc, cdt, cdn){
+	wn.call({
+		method:"core.doctype.event.event.sync_google_event",
+		callback:function(){
+			alert("done")
+		}
+	})
+}
