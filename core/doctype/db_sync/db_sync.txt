@@ -1,0 +1,100 @@
+[
+ {
+  "creation": "2014-07-10 12:30:44", 
+  "docstatus": 0, 
+  "modified": "2014-07-10 12:36:02", 
+  "modified_by": "Administrator", 
+  "owner": "Administrator"
+ }, 
+ {
+  "doctype": "DocType", 
+  "issingle": 1, 
+  "module": "Core", 
+  "name": "__common__"
+ }, 
+ {
+  "doctype": "DocField", 
+  "name": "__common__", 
+  "parent": "db sync", 
+  "parentfield": "fields", 
+  "parenttype": "DocType", 
+  "permlevel": 0
+ }, 
+ {
+  "doctype": "DocPerm", 
+  "name": "__common__", 
+  "parent": "db sync", 
+  "parentfield": "permissions", 
+  "parenttype": "DocType", 
+  "permlevel": 0, 
+  "read": 1, 
+  "role": "System Manager", 
+  "write": 1
+ }, 
+ {
+  "doctype": "DocType", 
+  "name": "db sync"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "host_id", 
+  "fieldtype": "Data", 
+  "label": "Remote Host IP"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "host_ssh_user", 
+  "fieldtype": "Data", 
+  "label": "Remote Host ssh user"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "host_ssh_password", 
+  "fieldtype": "Data", 
+  "label": "Remote Host SSH Password"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "remote_dbuser", 
+  "fieldtype": "Data", 
+  "label": "Remote DB User"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "remote_dbuserpassword", 
+  "fieldtype": "Data", 
+  "label": "Remote DB User Password"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "remote_dbname", 
+  "fieldtype": "Data", 
+  "label": "Remote DB name"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "column_break_7", 
+  "fieldtype": "Column Break"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "dbuser", 
+  "fieldtype": "Data", 
+  "label": "Local user"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "dbuserpassword", 
+  "fieldtype": "Data", 
+  "label": "Local DB User PAssword"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "dbname", 
+  "fieldtype": "Data", 
+  "label": "Local DB Name"
+ }, 
+ {
+  "doctype": "DocPerm"
+ }
+]
