@@ -2,7 +2,7 @@
  {
   "creation": "2013-06-10 13:17:47", 
   "docstatus": 0, 
-  "modified": "2013-11-20 12:45:15", 
+  "modified": "2014-07-02 12:37:03", 
   "modified_by": "Administrator", 
   "owner": "Administrator"
  }, 
@@ -99,6 +99,25 @@
   "fieldtype": "Datetime", 
   "label": "Ends on", 
   "reqd": 0
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "event_status", 
+  "fieldtype": "Select", 
+  "label": "Event Status", 
+  "options": "Arranged\nCancelled"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "event_id", 
+  "fieldtype": "Data", 
+  "label": "Event id"
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "test", 
+  "fieldtype": "Button", 
+  "label": "Test"
  }, 
  {
   "doctype": "DocField", 

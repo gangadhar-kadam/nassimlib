@@ -2,7 +2,7 @@
  {
   "creation": "2013-03-07 11:54:44", 
   "docstatus": 0, 
-  "modified": "2013-11-03 11:10:54", 
+  "modified": "2014-07-01 18:08:04", 
   "modified_by": "Administrator", 
   "owner": "Administrator"
  }, 
@@ -235,6 +235,18 @@
   "fieldtype": "HTML", 
   "label": "Roles HTML", 
   "read_only": 1
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "credentials_for_calender", 
+  "fieldtype": "Section Break", 
+  "label": "Credentials For Calender "
+ }, 
+ {
+  "doctype": "DocField", 
+  "fieldname": "credentials", 
+  "fieldtype": "Small Text", 
+  "label": "Credentials"
  }, 
  {
   "doctype": "DocField", 
